@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -36,7 +37,9 @@ namespace YukimaruGames.Editor.Tools
                 
                 if (www.result is UnityWebRequest.Result.Success)
                 {
-                    yield return DownloadHandlerAudioClip.GetContent(www);
+                    var content = DownloadHandlerAudioClip.GetContent(www);
+                    content.name = Path.GetFileNameWithoutExtension(url);
+                    yield return content;
                 }
             }
             finally
