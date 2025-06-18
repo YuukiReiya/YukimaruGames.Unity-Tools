@@ -1,2 +1,3 @@
 # YukimaruGames.Unity-Tools
-Unity Editor-Tools 開発
+Unity開発用の自作ツールコレクション。
+
