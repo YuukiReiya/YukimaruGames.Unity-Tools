@@ -72,6 +72,12 @@ namespace YukimaruGames.Editor.Tools
             }
         }
 
+        internal static bool Loop
+        {
+            get => Source.loop;
+            set => Source.loop = value;
+        }
+
         static InternalAudioPlayer()
         {
             EditorApplication.update -= OnEditorUpdate;

@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure;
+using YukimaruGames.Editor.Tools.AudioPlayer.View;
+
 // ReSharper disable InconsistentNaming
 
 namespace YukimaruGames.Editor.Tools
 {
-    public sealed class ExternalAudioPlayerWindow : EditorWindow
+    internal sealed class ExternalAudioPlayerWindow : EditorWindow
     {
         private const string kToolName = "External Audio Player";
         private const float kGridWidth = 100f;
@@ -18,6 +21,8 @@ namespace YukimaruGames.Editor.Tools
         private VolumeControlPanel _volumePanel;
         private PlaybackControlPanel _playbackPanel;
         private PlaylistPanel _playlistPanel;
+
+        private BuiltInEditorIconRepository _iconRepository;
             
 
         private GUIStyle _headerStyle;
@@ -78,7 +83,7 @@ namespace YukimaruGames.Editor.Tools
         private float _lastUnmuteVolume;
 
         [MenuItem("Tools/" + kToolName)]
-        public static void ShowWindow()
+        internal static void ShowWindow()
         {
             GetWindow<ExternalAudioPlayerWindow>(kToolName);
         }
@@ -134,8 +139,9 @@ namespace YukimaruGames.Editor.Tools
         {
             InternalAudioPlayer.OnUpdateLoadProgress += UpdateLoadProgress;
 
+            _iconRepository = new BuiltInEditorIconRepository();
             _volumePanel = new VolumeControlPanel();
-            _playbackPanel = new PlaybackControlPanel();
+            _playbackPanel = new PlaybackControlPanel(_iconRepository);
             _playlistPanel = new PlaylistPanel(InternalAudioPlayer.AudioClips);
         }
 
@@ -143,11 +149,13 @@ namespace YukimaruGames.Editor.Tools
         {
             InternalAudioPlayer.OnUpdateLoadProgress -= UpdateLoadProgress;
 
-            _playbackPanel.Release();
-            
+            IDisposable disposable = _iconRepository;
+            disposable.Dispose();
+
             _volumePanel = null;
             _playbackPanel = null;
             _playlistPanel = null;
+            _iconRepository = null;
         }
         
         private void DrawResetButton()
