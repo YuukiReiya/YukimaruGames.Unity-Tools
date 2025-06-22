@@ -1,8 +1,11 @@
 #if UNITY_EDITOR
 
+using System;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using YukimaruGames.Editor.Tools.AudioPlayer.Application;
+
 // ReSharper disable InconsistentNaming
 
 namespace YukimaruGames.Editor.Tools
@@ -10,38 +13,37 @@ namespace YukimaruGames.Editor.Tools
     public sealed class VolumeControlPanel
     {
         private float _lastUnmuteVolume = InternalAudioPlayer.Volume;
-        private GUIStyle _currentVolumeStyle;
-        private GUIStyle CurrentVolumeStyle
+        private readonly Lazy<GUIStyle> _currentVolumeStyleLazy = new(() => new GUIStyle(EditorStyles.boldLabel)
         {
-            get
-            {
-                if (_currentVolumeStyle == null || _currentVolumeStyle.Equals(null))
-                {
-                    _currentVolumeStyle = new GUIStyle(EditorStyles.boldLabel)
-                    {
-                        alignment = TextAnchor.MiddleCenter,
-                    };
-                }
-                return _currentVolumeStyle;
-            }
-        }
-        
-        private const string kHeaderName = "Volume Control";
-        private const float kItemHeightSpace = 5f;
-        private const string kMute = "Mute";
-        private const string kUnmute = "Unmute";
-        private const float kMuteLabelWidth = 80f;
-        private const string kVolume = "Volume";
-        private const string kPresets = "Presets";
-        private const string kCurrentVolume = "Current Volume: ";
+            alignment = TextAnchor.MiddleCenter
+        });
 
+        private readonly Lazy<GUIContent> _headerContentLazy;
+        private readonly Lazy<GUIContent> _muteContentLazy;
+        private readonly Lazy<GUIContent> _unmuteContentLazy;
+        private readonly Lazy<GUIContent> _presetContentLazy;
+        private readonly Lazy<GUIContent> _volumeContentLazy;
+        
+        private const float kItemHeightSpace = 5f;
+        private const float kMuteLabelWidth = 80f;
+        private const string kCurrentVolume = "Current Volume: ";
+        
         private static readonly float[] Presets = { 0f, 0.25f, 0.5f, 0.75f, 1f };
         private static readonly float[] FineTunes = { 0.01f, 0.05f, 0.1f };
 
+        internal VolumeControlPanel(IBuiltInEditorIconRepository iconRepository)
+        {
+            _headerContentLazy = new Lazy<GUIContent>(() => new GUIContent("Volume Control", iconRepository.GetIcon("d_AudioImporter Icon")));
+            _muteContentLazy = new Lazy<GUIContent>(() => new GUIContent("Mute", iconRepository.GetIcon("d_GameViewAudio")));
+            _unmuteContentLazy = new Lazy<GUIContent>(() => new GUIContent("Unmute", iconRepository.GetIcon("d_GameViewAudio On")));
+            _presetContentLazy = new Lazy<GUIContent>(() => new GUIContent("Presets", iconRepository.GetIcon("Preset.Context")));
+            _volumeContentLazy = new Lazy<GUIContent>(() => new GUIContent("Volume", iconRepository.GetIcon("Audio Mixer")));
+        }
+        
         public void Show()
         {
             using var layoutScope = new EditorGUILayout.VerticalScope(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(kHeaderName, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(_headerContentLazy.Value, EditorStyles.boldLabel);
             
             EditorGUILayout.Space(kItemHeightSpace);
             DrawMuteButton();
@@ -57,12 +59,12 @@ namespace YukimaruGames.Editor.Tools
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField(kMute,GUILayout.Width(kMuteLabelWidth));
-
+                EditorGUILayout.LabelField(_muteContentLazy.Value,GUILayout.Width(kMuteLabelWidth));
+                
                 const float threshold = 0.001f;
 
                 var isMuted = InternalAudioPlayer.Volume < threshold;
-                if (GUILayout.Button(isMuted ? kUnmute : kMute))
+                if (GUILayout.Button((isMuted ? _unmuteContentLazy : _muteContentLazy).Value))
                 {
                     if (isMuted)
                     {
@@ -79,13 +81,13 @@ namespace YukimaruGames.Editor.Tools
 
         private void DrawVolumeSlider()
         {
-            var volume = EditorGUILayout.Slider(kVolume, InternalAudioPlayer.Volume, 0f, 1f);
+            var volume = EditorGUILayout.Slider(_volumeContentLazy.Value, InternalAudioPlayer.Volume, 0f, 1f);
             InternalAudioPlayer.Volume = volume;
         }
 
         private void DrawVolumePresets()
         {
-            EditorGUILayout.LabelField(kPresets, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(_presetContentLazy.Value, EditorStyles.boldLabel);
             using var scope = new EditorGUILayout.HorizontalScope();
 
             foreach (var value in Presets)
@@ -109,7 +111,7 @@ namespace YukimaruGames.Editor.Tools
             }
 
             GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField($"{kCurrentVolume} {InternalAudioPlayer.Volume:P1}", CurrentVolumeStyle);
+            EditorGUILayout.LabelField($"{kCurrentVolume} {InternalAudioPlayer.Volume:P1}", _currentVolumeStyleLazy.Value);
             GUILayout.FlexibleSpace();
 
             foreach (var value in FineTunes.OrderBy(v => v))

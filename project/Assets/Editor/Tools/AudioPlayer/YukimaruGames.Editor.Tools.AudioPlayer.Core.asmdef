@@ -1,7 +1,9 @@
 {
-    "name": "YukimaruGames.Editor.Tools.AudioPlayer",
+    "name": "YukimaruGames.Editor.Tools.AudioPlayer.Core",
     "rootNamespace": "YukimaruGames.Editor.Tools",
-    "references": [],
+    "references": [
+        "YukimaruGames.Editor.Tools.AudioPlayer.Bridge"
+    ],
     "includePlatforms": [
         "Editor"
     ],
