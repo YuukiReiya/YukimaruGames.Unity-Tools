@@ -18,23 +18,22 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         private bool _isLoading;
 
         internal event Action<float> OnUpdateLoadProgress;
+        private readonly Lazy<GUIContent> _headerContentLazy;
+        private readonly Lazy<GUIContent> _inputFieldContentLazy;
+        private readonly Lazy<GUIContent> _browseButtonContentLazy;
+        private readonly Lazy<GUIContent> _loadButtonContentLazy;
         
-        private const string kHeaderName = "Select External Audio File:";
-        private const string kFilePath = "File Path";
-        private const string kBrowseButtonName = "Browse";
         private const string kBrowseOpenFileTitle = "Select Audio File";
         private const string kFileExtensions = "mp3,wav";
-        private const string kLoadButtonName = "Load Audio File";
-        private const float kBrowseButtonWidth = 60f;
-        private const string kErrorDialogTitle = "Error";
-        private const string kErrorDialogMessage = "Please select a valid audio file.";
-        private const string kErrorDialogConfirmButtonName = "OK";
-        private const string kProgressBarTitle = "Loading...";
-        private const string kIcon = "d_Project";//d_FolderOpened Icon
+        private const float kBrowseButtonWidth = 100f;
 
-        internal LoadFilePanel(IAudioClipRepository repository)
+        internal LoadFilePanel(IBuiltInEditorIconRepository iconRepository,IAudioClipRepository audioClipRepository)
         {
-            _repository = repository;
+            _repository = audioClipRepository;
+            _headerContentLazy =  new Lazy<GUIContent>(() => new GUIContent("Select External Audio File:", iconRepository.GetIcon("d_Profiler.FileAccess")));
+            _inputFieldContentLazy = new Lazy<GUIContent>(() => new GUIContent("File Path"));
+            _loadButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Load Audio File", iconRepository.GetIcon("Download-Available")));
+            _browseButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Browse", iconRepository.GetIcon("Folder")));
         }
 
         ~LoadFilePanel()
@@ -58,17 +57,17 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 
         private void DrawHeader()
         {
-            EditorGUILayout.LabelField(kHeaderName, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(_headerContentLazy.Value, EditorStyles.boldLabel);
         }
 
         private void DrawInputField()
         {
-            _filePath = EditorGUILayout.TextField(kFilePath, _filePath);
+            _filePath = EditorGUILayout.TextField(_inputFieldContentLazy.Value, _filePath);
         }
 
         private void DrawBrowseButton()
         {
-            if (!GUILayout.Button(kBrowseButtonName, GUILayout.Width(kBrowseButtonWidth)))
+            if (!GUILayout.Button(_browseButtonContentLazy.Value, GUILayout.Width(kBrowseButtonWidth)))
             {
                 return;
             }
@@ -86,7 +85,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         {
             using (new EditorGUI.DisabledScope(_isLoading))
             {
-                var clicked = GUILayout.Button(kLoadButtonName);
+                var clicked = GUILayout.Button(_loadButtonContentLazy.Value);
                 if (!clicked)
                 {
                     return;
@@ -99,7 +98,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             }
             else
             {
-                EditorUtility.DisplayDialog(kErrorDialogTitle, kErrorDialogMessage, kErrorDialogConfirmButtonName);
+                EditorUtility.DisplayDialog("Error", "Please select a valid audio file.", "OK");
             }
         }
 
@@ -113,9 +112,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
                 return;
             }
 
-//#pragma warning disable CS4014 // この呼び出しは待機されなかったため、現在のメソッドの実行は呼び出しの完了を待たずに続行されます
             await LoadAsync(key, url);
-//#pragma warning restore CS4014 // この呼び出しは待機されなかったため、現在のメソッドの実行は呼び出しの完了を待たずに続行されます
         }
 
         private async Task LoadAsync(string key, string url)
@@ -124,10 +121,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             {
                 _isLoading = true;
                 AudioClipLoader.OnUpdateProgress += UpdateLoadProgress;
-                // var clip = await AudioClipLoader.LoadAsync(
-                //     SynchronizationContext.Current,
-                //     url, 5f);
-
                 var clip = await AudioClipLoader.LoadAsync(
                     SynchronizationContext.Current,
                     url, 5f);
@@ -136,11 +129,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
                 {
                     _repository.TryAdd(key, clip);
                 }
-
-                var msg = clip != null
-                    ? "成功"
-                    : "失敗";
-                Debug.Log(msg);
             }
             catch (Exception e)
             {
@@ -155,24 +143,11 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             }
         }
 
-        internal void OnUpdate()
-        {
-            if (!_isLoading) return;
-
-            // var elapsed = AudioClipLoader.Stopwatch.Elapsed;
-            // var progress = AudioClipLoader.LoadProgress;
-            // UpdateLoadProgress(elapsed, progress);
-            // OnUpdateLoadProgress?.Invoke(progress);
-        }
-
-        //private void UpdateLoadProgress(TimeSpan timeSpan,float progress)
         private void UpdateLoadProgress(float progress)
         {
-            Debug.Log($"OnUpdate : {progress} from LoadFilePanel");
             EditorUtility.DisplayProgressBar(
-                kProgressBarTitle,
-                //$"{progress:P0}/100% Elapsed : {timeSpan.TotalSeconds}s",
-                $"{progress:F0} / 100% ",
+                "Loading...",
+                $"{progress:F0/100:P0}",
                 progress);
             OnUpdateLoadProgress?.Invoke(progress);
         }
