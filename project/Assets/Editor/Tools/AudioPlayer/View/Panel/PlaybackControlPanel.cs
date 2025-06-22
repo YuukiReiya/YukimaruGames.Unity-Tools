@@ -27,37 +27,38 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             alignment = TextAnchor.MiddleCenter,
         });
 
-        private const string kHeaderName = "Playback Control";
-        private const float kButtonHeight = 30f;
-        private const string kPlayTime = "Play Time";
-        private const float kSliderHeight = 16f;
+        private readonly Lazy<GUIContent> _headerContentLazy;
+        private readonly Lazy<GUIContent> _playButtonContentLazy;
+        private readonly Lazy<GUIContent> _pauseButtonContentLazy;
+        private readonly Lazy<GUIContent> _stopButtonContentLazy;
+        private readonly Lazy<GUIContent> _prevButtonContentLazy;
+        private readonly Lazy<GUIContent> _nextButtonContentLazy;
+        private readonly Lazy<GUIContent> _loopButtonContentLazy;
+        private readonly Lazy<GUIContent> _shuffleButtonContentLazy;
 
-        private const string kPlay = "Play";
-        private const string kPause = "Pause";
-        private const string kStop = "Stop";
-        private const string kLoop = "Repeat";
-        private const string kPrev = "";
-        private const string kNext = "";
-        private const string kShuffle = "Shuffle";
-        
-        private const string kPlayIcon = "d_PlayButton";
-        private const string kPauseIcon = "d_PauseButton";
-        private const string kStopIcon = "d_StopButton";
-        private const string kLoopIcon = "d_preAudioLoopOff";
-        private const string kPrevIcon = "d_Animation.PrevKey";
-        private const string kNextIcon = "d_Animation.NextKey";
-        private const string kShuffleIcon = "d_UnityEditor.Graphs.AnimatorControllerTool";
+        private const float kButtonHeight = 30f;
+        private const float kHeaderSpace = 6f;
+        private const float kSliderHeight = 16f;
+        private const string kAudioClipIcon = "d_AudioClip On Icon";
 
         internal PlaybackControlPanel(IBuiltInEditorIconRepository iconRepository)
         {
             _iconRepository = iconRepository;
+            _headerContentLazy = new Lazy<GUIContent>(() => new GUIContent("Playback Menu", iconRepository.GetIcon("d_BuildSettings.Windows.Small")));
+            _playButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Play", iconRepository.GetIcon("d_PlayButton")));
+            _pauseButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Pause", iconRepository.GetIcon("d_PauseButton")));
+            _stopButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Stop", iconRepository.GetIcon("d_StopButton")));
+            _loopButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Repeat", iconRepository.GetIcon("d_preAudioLoopOff")));
+            _shuffleButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Shuffle", iconRepository.GetIcon("d_UnityEditor.Graphs.AnimatorControllerTool")));
+            _prevButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_Animation.PrevKey")));
+            _nextButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_Animation.NextKey")));
         }
-        
+
         internal void Show()
         {
-            EditorGUILayout.LabelField(kHeaderName, EditorStyles.boldLabel);
-
             using var layoutScope = new EditorGUILayout.VerticalScope(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(_headerContentLazy.Value, EditorStyles.boldLabel);
+
             DrawSeekBar();
             EditorGUILayout.Space(10);
             DrawButtonsPanel();
@@ -75,7 +76,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             using var scope = new EditorGUILayout.HorizontalScope();
             using (new EditorGUI.DisabledScope(InternalAudioPlayer.IsPlaying()))
             {
-                if (GUILayout.Button(new GUIContent(kPlay, GetIcon(kPlayIcon)), _buttonStyleLazy.Value,
+                if (GUILayout.Button(_playButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
                     InternalAudioPlayer.Play();
@@ -84,13 +85,13 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 
             using (new EditorGUI.DisabledScope(!InternalAudioPlayer.IsPlaying()))
             {
-                if (GUILayout.Button(new GUIContent(kPause, GetIcon(kPauseIcon)), _buttonStyleLazy.Value,
+                if (GUILayout.Button(_pauseButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
                     InternalAudioPlayer.Pause();
                 }
 
-                if (GUILayout.Button(new GUIContent(kStop, GetIcon(kStopIcon)), _buttonStyleLazy.Value,
+                if (GUILayout.Button(_stopButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
                     InternalAudioPlayer.Stop();
@@ -101,21 +102,21 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         private void DrawNavigationPanel()
         {
             using var scope = new EditorGUILayout.HorizontalScope();
-            
-            if (GUILayout.Button(new GUIContent(kPrev, GetIcon(kPrevIcon)), _buttonStyleLazy.Value,
+
+            if (GUILayout.Button(_prevButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
                 InternalAudioPlayer.Play();
             }
 
             var isLoop = InternalAudioPlayer.Loop;
-            InternalAudioPlayer.Loop = GUILayout.Toggle(isLoop,new GUIContent(kLoop, GetIcon(kLoopIcon)), _buttonStyleLazy.Value,
-                    GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
+            InternalAudioPlayer.Loop = GUILayout.Toggle(isLoop, _loopButtonContentLazy.Value, _buttonStyleLazy.Value,
+                GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
 
-            _useShuffle = GUILayout.Toggle(_useShuffle, new GUIContent(kShuffle, GetIcon(kShuffleIcon)),
+            _useShuffle = GUILayout.Toggle(_useShuffle, _shuffleButtonContentLazy.Value,
                 _buttonStyleLazy.Value, GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
-            
-            if (GUILayout.Button(new GUIContent(kNext, GetIcon(kNextIcon)), _buttonStyleLazy.Value,
+
+            if (GUILayout.Button(_nextButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
                 InternalAudioPlayer.Play();
@@ -130,9 +131,9 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             var length = hasClip ? clip.length : 0f;
             var time = InternalAudioPlayer.Time;
 
+            EditorGUILayout.Space(kHeaderSpace);
             using (new EditorGUI.DisabledScope(!hasClip))
             {
-                //EditorGUILayout.LabelField(kPlayTime, EditorStyles.label);
                 DrawPlaybackPosition(time, length);
                 InternalAudioPlayer.Time = TimeSlider(time, length);
                 if (hasClip) DrawClipName(clip);
@@ -151,15 +152,13 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             using var scope = new EditorGUILayout.HorizontalScope();
             EditorGUILayout.LabelField($"{time.TimeFormated()}", _timeLabelStyleLazy.Value);
             GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField($"{length.TimeFormated()}", _timeLabelStyleLazy.Value);
+            EditorGUILayout.LabelField($"{(Mathf.Approximately(length, 0f) ? "--:--" : length.TimeFormated())}", _timeLabelStyleLazy.Value);
         }
 
         private void DrawClipName(AudioClip clip)
         {
-            EditorGUILayout.LabelField($"{clip.name}", _clipNameStyleLazy.Value);
+            EditorGUILayout.LabelField(new GUIContent(clip.name, _iconRepository.GetIcon(kAudioClipIcon)), _clipNameStyleLazy.Value);
         }
-
-        private Texture GetIcon(string iconName) => _iconRepository.GetIcon(iconName);
     }
 }
 #endif
