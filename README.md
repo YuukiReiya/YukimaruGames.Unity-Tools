@@ -7,13 +7,12 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/releases)
 [![License](https://img.shields.io/github/license/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/stargazers)
-<br>
 [![GitHub last commit](https://img.shields.io/github/last-commit/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/commits/main)
-<br>
-[![GitHub watchers](https://img.shields.io/github/watchers/YuukiReiya/YukimaruGames.Unity-Tools?style=social?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools?style=social/watchers)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/pulls)
 [![GitHub issues](https://img.shields.io/github/issues/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/issues)
+[![GitHub stars](https://img.shields.io/github/stars/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/stargazers)
+[![GitHub watchers](https://img.shields.io/github/watchers/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/watchers)
+
 
 ---
 
