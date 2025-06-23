@@ -1,13 +1,19 @@
 # YukimaruGames.Unity-Tools
 
-🚀 **A collection of self-made tools to support Unity development.** 🚀<br>
-🚀 **Unity開発をサポートするために作った自作ツール群。** 🚀
+🚀 **A collection of self-made tools to support Unity development.** <br>
+🚀 **Unity開発をサポートするために作った自作ツール群。**
 
 ---
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/releases)
 [![License](https://img.shields.io/github/license/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/stargazers)
+<br>
+[![GitHub last commit](https://img.shields.io/github/last-commit/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/commits/main)
+<br>
+[![GitHub watchers](https://img.shields.io/github/watchers/YuukiReiya/YukimaruGames.Unity-Tools?style=social?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools?style=social/watchers)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/pulls)
+[![GitHub issues](https://img.shields.io/github/issues/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/issues)
 
 ---
 
@@ -25,9 +31,9 @@ This repository is a collection of **various self-made Editor extensions and uti
 This section provides an overview of each tool included in this repository, along with links to their detailed documentation.<br>
 このリポジリに含まれる各ツールの概要と、詳細ドキュメントへのリンクです。
 
-| Tool Name / ツール名 | Status / ステータス | Overview / 概要 | Details / 詳細 |
-| :------------------- | :------------------ | :-------------- | :------------- |
-| External Audio Player| [e.g., Preview/Stable] | UnityEditor上でオーディオ再生を提供するエディター拡張。 | [README.md](./Assets/Tools/AudioPlayer/README.md) |
+| Tool Name / ツール名 | Version / バージョン | Overview / 概要 | Details / 詳細 |
+| :------------------- | ------------------: | :-------------- | :------------- |
+| External Audio Player| v0.1.0 | UnityEditor上でオーディオ再生を提供するエディター拡張。 | [README.md](./Assets/Tools/AudioPlayer/README.md) |
 
 ---
 
