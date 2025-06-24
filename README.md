@@ -1,7 +1,7 @@
 # YukimaruGames.Unity-Tools
 
-🚀 **A collection of self-made tools to support Unity development.** <br>
-🚀 **Unity開発をサポートするために作った自作ツール群。**
+🚀 **A collection of self-made tools to support Unity development.** 🚀<br>
+🚀 **Unity開発をサポートするために作った自作ツール群。** 🚀
 
 ---
 
@@ -12,7 +12,6 @@
 [![GitHub issues](https://img.shields.io/github/issues/YuukiReiya/YukimaruGames.Unity-Tools)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/issues)
 [![GitHub stars](https://img.shields.io/github/stars/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/stargazers)
 [![GitHub watchers](https://img.shields.io/github/watchers/YuukiReiya/YukimaruGames.Unity-Tools?style=social)](https://github.com/YuukiReiya/YukimaruGames.Unity-Tools/watchers)
-
 
 ---
 
@@ -33,22 +32,22 @@ This section provides an overview of each tool included in this repository, alon
 | Tool Name / ツール名 | Version / バージョン | Overview / 概要 | Details / 詳細 |
 | :------------------- | ------------------: | :-------------- | :------------- |
 | External Audio Player| v0.1.0 | UnityEditor上でオーディオ再生を提供するエディター拡張。 | [README.md](./Assets/Tools/AudioPlayer/README.md) |
-
+| [Future Tool Name]| [v0.0.0] | [簡単な説明] | [README.md](./path/to/FutureTool/README.md)|
 ---
 
 ## ⬇️Getting Started (Common Installation)
 ⬇️はじめに (共通インストール手順)
 
-This section describes the general installation steps common to all tools in this repository. Individual tool-specific installation instructions are detailed in their respective README files.<br>
-このリポジリ内の全ツールに共通する一般的なインストール手順です。個別のツールのインストール手順は、それぞれのREADMEに記載しています。
+This section outlines the general steps to install tools from this repository. Each tool's detailed usage instructions can be found in their respective documentation.
+このセクションでは、本リポジトリに含まれるツールの一般的なインストール手順を説明します。各ツールの詳しい使用方法は、それぞれのドキュメントでご確認ください。
 
 1.  **Clone the Repository:**<br>
     **リポジリをクローン:**
     ```bash
     git clone https://github.com/YuukiReiya/YukimaruGames.Unity-Tools.git
     ```
-2.  **Open in Unity:** Open your Unity project and drag the necessary tool folder(s) (e.g., `Assets/[Tool1Folder]`, `Assets/[Tool2Folder]`) from the cloned repository into your Unity project's `Assets` folder.<br>
-    **Unityで開く:** Unityプロジェクトを開き、必要なツールのフォルダー（例: `Assets/[Tool1Folder]` や `Assets/[Tool2Folder]` など）を、クローンしたリポジリからUnityプロジェクトの`Assets`フォルダーにドラッグ＆ドロップしてください。
+2.  **Import into Unity:** Open your Unity project and drag the desired tool folder(s) from the cloned repository into your Unity project's Assets folder.<br>
+    **Unityへインポート:** Unityプロジェクトを開き、クローンしたリポジリから目的のツールフォルダーをUnityプロジェクトのAssetsフォルダーにドラッグ＆ドロップしてください。
 
 ---
 
