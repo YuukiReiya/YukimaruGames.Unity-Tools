@@ -1,9 +1,7 @@
 {
-    "name": "YukimaruGames.Editor.Tools.AudioPlayer.Core",
+    "name": "YukimaruGames.Editor.Tools.Core",
     "rootNamespace": "YukimaruGames.Editor.Tools",
-    "references": [
-        "YukimaruGames.Editor.Tools.Core"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
@@ -11,7 +9,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

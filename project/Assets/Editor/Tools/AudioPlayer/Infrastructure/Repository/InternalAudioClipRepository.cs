@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using YukimaruGames.Editor.Tools.AudioPlayer.Application;
@@ -18,6 +20,18 @@ namespace YukimaruGames.Editor.Tools
             _repository = new AudioClipRepository();
         }
 
+        event Action<string, AudioClip> IAudioClipRepository.OnAddElement
+        {
+            add => _repository.OnAddElement += value;
+            remove => _repository.OnAddElement -= value;
+        }
+
+        event Action<string> IAudioClipRepository.OnRemoveElement
+        {
+            add => _repository.OnRemoveElement += value;
+            remove => _repository.OnRemoveElement -= value;
+        }
+
         IReadOnlyList<AudioClipReference> IAudioClipRepository.List => _repository.List;
         
         void IAudioClipRepository.Clear() => _repository.Clear();
@@ -27,5 +41,8 @@ namespace YukimaruGames.Editor.Tools
         AudioClip IAudioClipRepository.Find(int index) => _repository.Find(index);
         int IAudioClipRepository.FindIndex(string key) => _repository.FindIndex(key);
         bool IAudioClipRepository.TryAdd(string key, AudioClip clip) => _repository.TryAdd(key, clip);
+        bool IAudioClipRepository.Remove(int index) => _repository.Remove(index);
+        bool IAudioClipRepository.Remove(string key) => _repository.Remove(key);
     }
 }
+#endif

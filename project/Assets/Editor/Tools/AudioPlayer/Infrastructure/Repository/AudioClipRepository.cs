@@ -1,18 +1,36 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using YukimaruGames.Editor.Tools.AudioPlayer.Application;
 using YukimaruGames.Editor.Tools.AudioPlayer.Domain;
+using Object = UnityEngine.Object;
 
 namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
 {
     public sealed class AudioClipRepository : IAudioClipRepository
     {
         private readonly List<AudioClipReference> _list = new();
-        private readonly Dictionary<string, AudioClip> _dic = new();
+
+        private Action<string, AudioClip> _onAddElement;
+
+        private Action<string> _onRemoveElement;
 
         private IAudioClipRepository Self => this;
+
+
+        event Action<string,AudioClip> IAudioClipRepository.OnAddElement
+        {
+            add => _onAddElement += value;
+            remove => _onAddElement -= value;
+        }
+
+        event Action<string> IAudioClipRepository.OnRemoveElement
+        {
+            add => _onRemoveElement += value;
+            remove => _onRemoveElement -= value;
+        }
 
         IReadOnlyList<AudioClipReference> IAudioClipRepository.List => _list;
         
@@ -24,33 +42,48 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
             }
 
             _list.Clear();
-
-            foreach (var kvp in _dic)
-            {
-                Destroy(kvp.Value);
-            }
-
-            _dic.Clear();
         }
 
         bool IAudioClipRepository.TryFind(string key, out AudioClip clip) => (clip = Self.Find(key)) != null;
         bool IAudioClipRepository.TryFind(int index, out AudioClip clip) => (clip = Self.Find(index)) != null;
-        AudioClip IAudioClipRepository.Find(string key) => _dic.GetValueOrDefault(key, null);
+        AudioClip IAudioClipRepository.Find(string key) => _list.Find(x => x.Key == key)?.AudioClip;
         AudioClip IAudioClipRepository.Find(int index) => index < _list.Count ? _list[index].AudioClip : null;
         int IAudioClipRepository.FindIndex(string key)
         {
-            if (_dic.TryGetValue(key, out _))
-            {
-                return _list.FindIndex(x => x.Key == key);
-            }
-
-            return -1;
+            return _list.FindIndex(x => x.Key == key);
         }
         bool IAudioClipRepository.TryAdd(string key, AudioClip clip)
         {
-            if (_dic.TryAdd(key, clip))
+            if (_list.Find(x => x.Key == key) != null)
             {
-                _list.Add(new AudioClipReference(key, clip));
+                return false;
+            }
+
+            _onAddElement?.Invoke(key, clip);
+            _list.Add(new AudioClipReference(key, clip));
+            return true;
+        }
+
+        bool IAudioClipRepository.Remove(int index)
+        {
+            if (0 <= index && index < _list.Count)
+            {
+                var key = _list[index].Key;
+                _list.RemoveAt(index);
+                _onRemoveElement?.Invoke(key);
+                return true;
+            }
+            
+            return false;
+        }
+
+        bool IAudioClipRepository.Remove(string key)
+        {
+            var index = Self.FindIndex(key);
+            if (0 <= index)
+            {
+                _list.RemoveAt(index);
+                _onRemoveElement?.Invoke(key);
                 return true;
             }
 

@@ -14,12 +14,11 @@ namespace YukimaruGames.Editor.Tools
 
         private static GameObject _go;
         private static AudioSource _source;
-        internal static readonly List<AudioRecord> AudioClips = new();
 
         internal static event Action OnSetUp;
         internal static event Action OnTearDown;
-        internal static event Action<float> OnUpdateLoadProgress;
         internal static event Action<float> OnUpdateVolume;
+        internal static event Action<PlayModeStateChange> OnUpdatePlayModeState;
         private static event Action<float> OnUpdateTime; 
 
         private static GameObject Go
@@ -44,7 +43,7 @@ namespace YukimaruGames.Editor.Tools
                     return _source;
                 }
 
-                return _source = GetOrReattach();
+                return _source = GetOrReattach<AudioSource>();
             }
         }
 
@@ -80,6 +79,9 @@ namespace YukimaruGames.Editor.Tools
 
         static InternalAudioPlayer()
         {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
 
@@ -96,6 +98,7 @@ namespace YukimaruGames.Editor.Tools
 
         private static void OnEditorQuit()
         {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.quitting -= OnEditorQuit;
             
@@ -105,7 +108,7 @@ namespace YukimaruGames.Editor.Tools
         internal static void SetUp()
         {
             _go = GetOrCreateInstance();
-            _source = GetOrReattach();
+            _source = GetOrReattach<AudioSource>();
 
             // フォーカスを外すと音楽再生が止まってしまうためバックグラウンド処理を止めない.
             Application.runInBackground = true;
@@ -144,10 +147,10 @@ namespace YukimaruGames.Editor.Tools
                 typeof(AudioSource));
         }
 
-        private static AudioSource GetOrReattach()
+        private static T GetOrReattach<T>()where T : Component
         {
-            var component = Go.GetComponent<AudioSource>();
-            return component != null ? component : Go.AddComponent<AudioSource>();
+            var component = Go.GetComponent<T>();
+            return component != null ? component : Go.AddComponent<T>();
         }
 
         internal static void Play()
@@ -200,7 +203,7 @@ namespace YukimaruGames.Editor.Tools
         internal static void Pause() => Source.Pause();
         internal static void Resume() => Source.UnPause();
         
-        internal static void Set(string filePath)
+        internal static void Set(AudioClip clip)
         {
             if (Source.isPlaying)
             {

@@ -1,8 +1,12 @@
 #if UNITY_EDITOR
 using System;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("YukimaruGames.Editor.Tools.AudioPlayer.Core")]
 
 namespace YukimaruGames.Editor.Tools.Extensions
 {
+    
     internal static class FormatExtensions
     {
         /// <summary>
@@ -14,7 +18,7 @@ namespace YukimaruGames.Editor.Tools.Extensions
         {
             var timeSpan = TimeSpan.FromSeconds(seconds);
             return 1 <= timeSpan.TotalHours
-                ? $"{timeSpan.TotalHours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}"
+                ? $"{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}"
                 : $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
         }
     }
