@@ -1,11 +1,12 @@
 #if UNITY_EDITOR
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Windows;
 using YukimaruGames.Editor.Tools.AudioPlayer.Application;
+using File = UnityEngine.Windows.File;
 
 // ReSharper disable InconsistentNaming
 
@@ -13,11 +14,13 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 {
     internal sealed class LoadFilePanel : IDisposable
     {
+        private readonly IAudioClipLoader _loader;
         private readonly IAudioClipRepository _repository;
         private string _filePath;
         private bool _isLoading;
 
         internal event Action<float> OnUpdateLoadProgress;
+        private readonly TimeSpan kTimeout = TimeSpan.FromSeconds(5f);
         private readonly Lazy<GUIContent> _headerContentLazy;
         private readonly Lazy<GUIContent> _inputFieldContentLazy;
         private readonly Lazy<GUIContent> _browseButtonContentLazy;
@@ -27,8 +30,9 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         private const string kFileExtensions = "mp3,wav";
         private const float kBrowseButtonWidth = 100f;
 
-        internal LoadFilePanel(IBuiltInEditorIconRepository iconRepository,IAudioClipRepository audioClipRepository)
+        internal LoadFilePanel(IBuiltInEditorIconRepository iconRepository,IAudioClipRepository audioClipRepository,IAudioClipLoader audioClipLoader)
         {
+            _loader = audioClipLoader;
             _repository = audioClipRepository;
             _headerContentLazy =  new Lazy<GUIContent>(() => new GUIContent("Select External Audio File:", iconRepository.GetIcon("d_Profiler.FileAccess")));
             _inputFieldContentLazy = new Lazy<GUIContent>(() => new GUIContent("File Path"));
@@ -104,30 +108,32 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 
         private async void Load()
         {
-            var url = AudioClipLoader.GetUrl(_filePath);
+            var url = PathUtility.ToUrl(_filePath);
             var key = _filePath;
+            var clipName = Path.GetFileNameWithoutExtension(_filePath);
 
             if (_repository.TryFind(key, out _))
             {
                 return;
             }
 
-            await LoadAsync(key, url);
+            await LoadAsync(key, clipName, url);
         }
 
-        private async Task LoadAsync(string key, string url)
+        private async Task LoadAsync(string key, string clipName, string url)
         {
             try
             {
                 _isLoading = true;
-                AudioClipLoader.OnUpdateProgress += UpdateLoadProgress;
-                var clip = await AudioClipLoader.LoadAsync(
-                    SynchronizationContext.Current,
-                    url, 5f);
+
+                using var cts = new CancellationTokenSource(kTimeout);
+                _loader.OnUpdateProgress += UpdateLoadProgress;
+                var clip = await _loader.LoadAsync(url, cts.Token);
 
                 if (clip != null)
                 {
-                    _repository.TryAdd(key, clip);
+                    clip.name = clipName;
+                    _repository.Add(key, clip);
                 }
             }
             catch (Exception e)
@@ -138,7 +144,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             finally
             {
                 _isLoading = false;
-                AudioClipLoader.OnUpdateProgress -= UpdateLoadProgress;
+                _loader.OnUpdateProgress -= UpdateLoadProgress;
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -147,7 +153,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         {
             EditorUtility.DisplayProgressBar(
                 "Loading...",
-                $"{progress:F0/100:P0}",
+                $"{progress*100:F0}/100%",
                 progress);
             OnUpdateLoadProgress?.Invoke(progress);
         }

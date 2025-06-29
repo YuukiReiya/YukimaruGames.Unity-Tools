@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -10,14 +9,17 @@ using YukimaruGames.Editor.Tools.AudioPlayer.Domain;
 using YukimaruGames.Editor.Tools.Extensions;
 // ReSharper disable InconsistentNaming
 
-namespace YukimaruGames.Editor.Tools
+namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 {
     internal sealed class PlaylistPanel : IDisposable
     {
         private Vector2 _scrollPosition;
-        private readonly IAudioClipRepository _audioClipRepository;
+        private bool _disposed;
 
+        private readonly IAudioPlaybackPresenter _presenter;
+        private readonly IPlaylistItemRepository _repository;
         private readonly List<PlaylistItem> _list = new();
+        private readonly Queue<PlaylistItem> _deleteQueue = new();
         private readonly ReorderableList _reorderableList;
 
         private readonly Lazy<GUIStyle> _musicNameStyleLazy = new(() => new GUIStyle(EditorStyles.largeLabel) { alignment = TextAnchor.MiddleLeft, contentOffset = new Vector2(0, 0),fontStyle = FontStyle.Bold,fontSize = 16});
@@ -26,6 +28,7 @@ namespace YukimaruGames.Editor.Tools
 
         private readonly Lazy<GUIContent> _musicNameContentLazy;
         private readonly Lazy<GUIContent> _playButtonContentLazy;
+        private readonly Lazy<GUIContent> _pauseButtonContentLazy;
         private readonly Lazy<GUIContent> _deleteButtonContentLazy;
         private readonly Lazy<GUIContent> _lengthContentLazy;
         private readonly Lazy<GUIContent> _volumeContentLazy;
@@ -36,55 +39,66 @@ namespace YukimaruGames.Editor.Tools
 
         private const float kPadding = 2f;
 
-        internal PlaylistPanel(IBuiltInEditorIconRepository iconRepository,IAudioClipRepository audioClipRepository)
+        internal PlaylistPanel(IAudioPlaybackPresenter presenter, IBuiltInEditorIconRepository iconRepository, IPlaylistItemRepository repository)
         {
-            _audioClipRepository = audioClipRepository;
+            _presenter = presenter;
+            _repository = repository;
             _musicNameContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_AudioClip On Icon")));
             _playButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_PlayButton")));
+            _pauseButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_PauseButton")));
             _deleteButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_TreeEditor.Trash")));
             _lengthContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("UnityEditor.AnimationWindow")));
             _volumeContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_GameViewAudio On")));
-            
+
             _reorderableList = new ReorderableList(_list, typeof(PlaylistItem), true, false, false, false)
             {
                 drawElementCallback = DrawItem,
                 drawElementBackgroundCallback = DrawItemBackground,
                 elementHeight = 40,
             };
-            
-            _list.Clear();
-            _list.AddRange(_audioClipRepository.List.Select(x => new PlaylistItem(x.Key, x.AudioClip)));
 
-            _list.Add(new PlaylistItem("dummy", "dummy_music_name", 1f, 60f));
-            _list.Add(new PlaylistItem("dummy2", "dummy_music_name", 0.9f, 3600f));
-            _list.Add(new PlaylistItem("dummy3", "dummy_music_name", 0.01f, 3600f*60));
-            
-            _audioClipRepository.OnAddElement += OnAddElement;
-            _audioClipRepository.OnRemoveElement += OnRemoveElement;
+            _list.Clear();
+            _list.AddRange(repository.List);
+
+            _repository.OnAddElement += OnAddElement;
+            _repository.OnRemoveElement += OnRemoveElement;
         }
 
         ~PlaylistPanel()
         {
-            IDisposable disposer = this;
-            disposer.Dispose();
+            (this as IDisposable).Dispose();
         }
         
         void IDisposable.Dispose()
         {
-            // TODO マネージリソースをここで解放します
-            _audioClipRepository.OnAddElement -= OnAddElement;
-            _audioClipRepository.OnRemoveElement -= OnRemoveElement;
-            
-            _reorderableList.drawElementBackgroundCallback -= DrawItemBackground;
-            _reorderableList.drawElementCallback -= DrawItem;
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        internal void Dispose(bool disposable)
+        {
+            if (_disposed) return;
+
+            if (disposable)
+            {
+                _repository.OnAddElement -= OnAddElement;
+                _repository.OnRemoveElement -= OnRemoveElement;
+            
+                _reorderableList.drawElementBackgroundCallback -= DrawItemBackground;
+                _reorderableList.drawElementCallback -= DrawItem;
+            }
+            
+            _disposed = true;
+        }
+        
         internal void Show()
         {
             using var layoutScope = new EditorGUILayout.VerticalScope(EditorStyles.helpBox);
             EditorGUILayout.LabelField("Playlist", EditorStyles.boldLabel);
             DrawScrollList();
+            
+            // ReorderableListの描画が終わってから描画要素を削除.
+            DeleteIfNeeded();
         }
 
         private void DrawScrollList()
@@ -125,22 +139,35 @@ namespace YukimaruGames.Editor.Tools
         {
             var item = _list[index];
 
-            //  曲名.
-            var musicNameRect = new Rect(rect);
-            MaterializeMusicNameRect(ref musicNameRect);
-            _musicNameContentLazy.Value.text = item.MusicName;
-            GUI.Label(musicNameRect, _musicNameContentLazy.Value, _musicNameStyleLazy.Value);
-
             // 削除ボタン.
             var deleteButtonRect = new Rect(rect);
             MaterializeDeleteButtonRect(ref deleteButtonRect);
-            GUI.Button(deleteButtonRect, _deleteButtonContentLazy.Value); 
+            if (GUI.Button(deleteButtonRect, _deleteButtonContentLazy.Value))
+            {
+                _deleteQueue.Enqueue(item);
+            } 
 
-            // 再生ボタン.
+            // 再生ボタン / 一時停止ボタン.
+            var isPlaying = _presenter.CurrentPlayingMusic.Key == item.Key && _presenter.IsPlaying;
             var playButtonRect = new Rect(deleteButtonRect);
             MaterializePlayButtonRect(ref playButtonRect);
-            GUI.Button(playButtonRect, _playButtonContentLazy.Value);
 
+            if (isPlaying)
+            {
+                if (GUI.Button(playButtonRect, _pauseButtonContentLazy.Value))
+                {
+                    _presenter.Pause();
+                }
+            }
+            else
+            {
+                if (GUI.Button(playButtonRect, _playButtonContentLazy.Value))
+                {
+                    _presenter.CurrentPlayingMusic = item;
+                    _presenter.Play();
+                }
+            }
+            
             // 音量.
             var volumeRect = new Rect(playButtonRect);
             MaterializeVolumeRect(ref volumeRect);
@@ -152,11 +179,18 @@ namespace YukimaruGames.Editor.Tools
             MaterializeLengthRect(ref lengthRect);
             _lengthContentLazy.Value.text = item.Length.TimeFormated();
             GUI.Label(lengthRect, _lengthContentLazy.Value, _lengthStyleLazy.Value);
+            
+            //  曲名.
+            var musicNameRect = new Rect(rect);
+            MaterializeMusicNameRect(ref musicNameRect, in lengthRect);
+            _musicNameContentLazy.Value.text = item.MusicName;
+            GUI.Label(musicNameRect, _musicNameContentLazy.Value, _musicNameStyleLazy.Value);
         }
 
-        private void MaterializeMusicNameRect(ref Rect rect)
+        private void MaterializeMusicNameRect(ref Rect rect,in Rect argRect1)
         {
             rect.y += kPadding;
+            rect.xMax = argRect1.x;
         }
 
         private void MaterializeLengthRect(ref Rect rect)
@@ -183,19 +217,25 @@ namespace YukimaruGames.Editor.Tools
             rect.y += kPadding;
             rect.width = width;
         }
-        
-        private void OnAddElement(string key, AudioClip content)
+
+        private void DeleteIfNeeded()
         {
-            _list.Add(new PlaylistItem(key, content));
+            using var e = _deleteQueue.GetEnumerator(); 
+            while (e.MoveNext())
+            {
+                var current = e.Current;
+                _list.Remove(current);
+            }
+        }
+        
+        private void OnAddElement(PlaylistItem item)
+        {
+            _list.Add(item);
         }
 
-        private void OnRemoveElement(string key)
+        private void OnRemoveElement(PlaylistItem item)
         {
-            var index = _list.FindIndex(x => x.Key == key);
-            if (index < 0)
-            {
-                _list.RemoveAt(index);
-            }
+            _list.Remove(item);
         }
     }
 }

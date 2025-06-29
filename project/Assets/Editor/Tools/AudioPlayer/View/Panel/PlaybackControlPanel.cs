@@ -11,8 +11,8 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 {
     internal sealed class PlaybackControlPanel
     {
+        private readonly IAudioPlaybackPresenter _presenter;
         private readonly IBuiltInEditorIconRepository _iconRepository;
-        private bool _useShuffle;
 
         private readonly Lazy<GUIStyle> _buttonStyleLazy = new(() => new GUIStyle(GUI.skin.button));
         private readonly Lazy<GUIStyle> _timeLabelStyleLazy = new(() => new GUIStyle(EditorStyles.label)
@@ -41,8 +41,9 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         private const float kSliderHeight = 16f;
         private const string kAudioClipIcon = "d_AudioClip On Icon";
 
-        internal PlaybackControlPanel(IBuiltInEditorIconRepository iconRepository)
+        internal PlaybackControlPanel(IAudioPlaybackPresenter presenter,IBuiltInEditorIconRepository iconRepository)
         {
+            _presenter = presenter;
             _iconRepository = iconRepository;
             _headerContentLazy = new Lazy<GUIContent>(() => new GUIContent("Playback Menu", iconRepository.GetIcon("d_BuildSettings.Windows.Small")));
             _playButtonContentLazy = new Lazy<GUIContent>(() => new GUIContent("Play", iconRepository.GetIcon("d_PlayButton")));
@@ -74,27 +75,27 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         private void DrawPlaybackButtons()
         {
             using var scope = new EditorGUILayout.HorizontalScope();
-            using (new EditorGUI.DisabledScope(InternalAudioPlayer.IsPlaying()))
+            using (new EditorGUI.DisabledScope(_presenter.CurrentPlayingMusic == null || _presenter.IsPlaying))
             {
                 if (GUILayout.Button(_playButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
-                    InternalAudioPlayer.Play();
+                    _presenter.Play();
                 }
             }
 
-            using (new EditorGUI.DisabledScope(!InternalAudioPlayer.IsPlaying()))
+            using (new EditorGUI.DisabledScope(!_presenter.IsPlaying))
             {
                 if (GUILayout.Button(_pauseButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
-                    InternalAudioPlayer.Pause();
+                    _presenter.Pause();
                 }
 
                 if (GUILayout.Button(_stopButtonContentLazy.Value, _buttonStyleLazy.Value,
                         GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
                 {
-                    InternalAudioPlayer.Stop();
+                    _presenter.Stop();
                 }
             }
         }
@@ -106,37 +107,40 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             if (GUILayout.Button(_prevButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                InternalAudioPlayer.Play();
+                //TODO:ひとつ前の再生.
+                _presenter.Play();
             }
 
-            var isLoop = InternalAudioPlayer.Loop;
-            InternalAudioPlayer.Loop = GUILayout.Toggle(isLoop, _loopButtonContentLazy.Value, _buttonStyleLazy.Value,
+            var isLoop = _presenter.Loop;
+            _presenter.Loop = GUILayout.Toggle(isLoop, _loopButtonContentLazy.Value, _buttonStyleLazy.Value,
                 GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
 
-            _useShuffle = GUILayout.Toggle(_useShuffle, _shuffleButtonContentLazy.Value,
+            _presenter.Shuffle = GUILayout.Toggle(_presenter.Shuffle, _shuffleButtonContentLazy.Value,
                 _buttonStyleLazy.Value, GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
 
             if (GUILayout.Button(_nextButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                InternalAudioPlayer.Play();
+                // TODO:次の再生.
+                _presenter.Play();
             }
         }
 
         private void DrawSeekBar()
         {
             using var scope = new GUILayout.VerticalScope();
-            var clip = InternalAudioPlayer.GetCurrentClip();
-            var hasClip = clip != null;
-            var length = hasClip ? clip.length : 0f;
-            var time = InternalAudioPlayer.Time;
+            var item = _presenter.CurrentPlayingMusic;
+            var isActive = item != null;
+            var time = _presenter.Time;
+            var length = item?.Length ?? 0f;
+            var name = item?.MusicName ?? string.Empty;
 
             EditorGUILayout.Space(kHeaderSpace);
-            using (new EditorGUI.DisabledScope(!hasClip))
+            using (new EditorGUI.DisabledScope(!isActive))
             {
                 DrawPlaybackPosition(time, length);
-                InternalAudioPlayer.Time = TimeSlider(time, length);
-                if (hasClip) DrawClipName(clip);
+                _presenter.Time = TimeSlider(time, length);
+                if (isActive) DrawClipName(name);
             }
         }
 
@@ -155,9 +159,9 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             EditorGUILayout.LabelField($"{(Mathf.Approximately(length, 0f) ? "--:--" : length.TimeFormated())}", _timeLabelStyleLazy.Value);
         }
 
-        private void DrawClipName(AudioClip clip)
+        private void DrawClipName(string name)
         {
-            EditorGUILayout.LabelField(new GUIContent(clip.name, _iconRepository.GetIcon(kAudioClipIcon)), _clipNameStyleLazy.Value);
+            EditorGUILayout.LabelField(new GUIContent(name, _iconRepository.GetIcon(kAudioClipIcon)), _clipNameStyleLazy.Value);
         }
     }
 }

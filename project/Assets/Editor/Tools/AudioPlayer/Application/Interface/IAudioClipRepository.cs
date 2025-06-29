@@ -17,7 +17,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
         internal AudioClip Find(string key);
         internal AudioClip Find(int index);
         internal int FindIndex(string key);
-        internal bool TryAdd(string key, AudioClip clip);
+        internal bool Add(string key, AudioClip clip);
         internal bool Remove(int index);
         internal bool Remove(string key);
     }

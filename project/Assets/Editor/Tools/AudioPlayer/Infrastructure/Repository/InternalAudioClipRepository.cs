@@ -40,7 +40,7 @@ namespace YukimaruGames.Editor.Tools
         AudioClip IAudioClipRepository.Find(string key) => _repository.Find(key);
         AudioClip IAudioClipRepository.Find(int index) => _repository.Find(index);
         int IAudioClipRepository.FindIndex(string key) => _repository.FindIndex(key);
-        bool IAudioClipRepository.TryAdd(string key, AudioClip clip) => _repository.TryAdd(key, clip);
+        bool IAudioClipRepository.Add(string key, AudioClip clip) => _repository.Add(key, clip);
         bool IAudioClipRepository.Remove(int index) => _repository.Remove(index);
         bool IAudioClipRepository.Remove(string key) => _repository.Remove(key);
     }

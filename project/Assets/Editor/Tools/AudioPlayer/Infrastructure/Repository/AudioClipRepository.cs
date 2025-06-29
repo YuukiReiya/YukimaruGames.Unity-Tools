@@ -52,15 +52,15 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
         {
             return _list.FindIndex(x => x.Key == key);
         }
-        bool IAudioClipRepository.TryAdd(string key, AudioClip clip)
+        bool IAudioClipRepository.Add(string key, AudioClip clip)
         {
             if (_list.Find(x => x.Key == key) != null)
             {
                 return false;
             }
 
-            _onAddElement?.Invoke(key, clip);
             _list.Add(new AudioClipReference(key, clip));
+            _onAddElement?.Invoke(key, clip);
             return true;
         }
 
