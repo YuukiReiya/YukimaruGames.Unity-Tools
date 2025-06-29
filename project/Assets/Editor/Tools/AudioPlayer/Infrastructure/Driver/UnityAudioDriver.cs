@@ -10,7 +10,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
     {
         private readonly AudioSource _source;
         private Action<AudioClip> _onClipChanged;
-        private Action<bool> _onLoopChanged;
         private Action<float> _onVolumeChanged;
         private Action<float> _onTimeUpdated;
         private Action _onPlayStarted;
@@ -40,12 +39,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
         {
             add => _onClipChanged += value;
             remove => _onClipChanged -= value;
-        }
-
-        event Action<bool> IAudioDriver.OnLoopChanged
-        {
-            add => _onLoopChanged += value;
-            remove => _onLoopChanged -= value;
         }
 
         event Action<float> IAudioDriver.OnVolumeChanged
@@ -90,18 +83,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
             remove => _onPlaybackFinished -= value;
         }
         
-        bool IAudioDriver.Loop
-        {
-            get => _source.loop;
-            set
-            {
-                var current = _source.loop;
-                if (current == value) return;
-                _source.loop = value;
-                _onLoopChanged?.Invoke(value);
-            }
-        }
-
         float IAudioDriver.Volume
         {
             get => _source.volume;
@@ -136,6 +117,10 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
         internal UnityAudioDriver(AudioSource source)
         {
             _source = source;
+            
+            // NOTE:
+            // Loopを有効にすると再生終了が検知出来ないため無効にする.
+            _source.loop = false;
         }
 
         ~UnityAudioDriver()
@@ -148,9 +133,14 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
             _source.Play();
             _onPlayStarted?.Invoke();
 
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts ??= new CancellationTokenSource();
+            if (_cts != null)
+            {
+                _cts.Cancel();
+                _cts.Dispose();
+                _cts = null;
+            }
+
+            _cts = new CancellationTokenSource();
             PlaybackMonitorAsync(_cts.Token);
         }
 
@@ -181,15 +171,18 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
 
                 if (token.IsCancellationRequested) return;
 
-                if ((_source?.isPlaying ?? false) && _source.clip != null)
+                var clip = _source?.clip;
+                if (clip != null)
                 {
                     var elapsed = Time.deltaTime;
-                    if ((_source?.clip?.length ?? float.MaxValue) <= (lastTime + elapsed))
+                    if (clip.length <= (lastTime + elapsed))
                     {
-                        _onPlaybackFinished?.Invoke();
+                        break;
                     }
                 }
             }
+
+            _onPlaybackFinished?.Invoke();
         }
 
         void IDisposable.Dispose()
@@ -206,7 +199,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Infrastructure
             _cts?.Dispose();
             
             _onClipChanged = null;
-            _onLoopChanged = null;
             _onPlaybackFinished = null;
             _onVolumeChanged = null;
             _onTimeUpdated = null;

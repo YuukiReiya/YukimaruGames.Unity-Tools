@@ -18,7 +18,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 
         private readonly IAudioPlaybackPresenter _presenter;
         private readonly IPlaylistItemRepository _repository;
-        private readonly List<PlaylistItem> _list = new();
         private readonly Queue<PlaylistItem> _deleteQueue = new();
         private readonly ReorderableList _reorderableList;
 
@@ -50,15 +49,18 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             _lengthContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("UnityEditor.AnimationWindow")));
             _volumeContentLazy = new Lazy<GUIContent>(() => new GUIContent(string.Empty, iconRepository.GetIcon("d_GameViewAudio On")));
 
-            _reorderableList = new ReorderableList(_list, typeof(PlaylistItem), true, false, false, false)
+            _reorderableList = new ReorderableList(_presenter.List, typeof(PlaylistItem), true, false, false, false)
             {
                 drawElementCallback = DrawItem,
                 drawElementBackgroundCallback = DrawItemBackground,
                 elementHeight = 40,
             };
 
-            _list.Clear();
-            _list.AddRange(repository.List);
+            _presenter.List.Clear();
+            foreach (var item in repository.List)
+            {
+                _presenter.List.Add(item);
+            }
 
             _repository.OnAddElement += OnAddElement;
             _repository.OnRemoveElement += OnRemoveElement;
@@ -137,7 +139,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
 
         private void DrawItem(Rect rect, int index, bool isActive, bool isFocused)
         {
-            var item = _list[index];
+            var item = _presenter.List[index];
 
             // 削除ボタン.
             var deleteButtonRect = new Rect(rect);
@@ -148,7 +150,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             } 
 
             // 再生ボタン / 一時停止ボタン.
-            var isPlaying = _presenter.CurrentPlayingMusic.Key == item.Key && _presenter.IsPlaying;
+            var isPlaying = _presenter.CurrentPlayingMusic.Key == item!.Key && _presenter.IsPlaying;
             var playButtonRect = new Rect(deleteButtonRect);
             MaterializePlayButtonRect(ref playButtonRect);
 
@@ -163,7 +165,7 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             {
                 if (GUI.Button(playButtonRect, _playButtonContentLazy.Value))
                 {
-                    _presenter.CurrentPlayingMusic = item;
+                    _presenter.NextPlayRequest = item;
                     _presenter.Play();
                 }
             }
@@ -224,18 +226,18 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             while (e.MoveNext())
             {
                 var current = e.Current;
-                _list.Remove(current);
+                _presenter.List.Remove(current);
             }
         }
         
         private void OnAddElement(PlaylistItem item)
         {
-            _list.Add(item);
+            _presenter.List.Add(item);
         }
 
         private void OnRemoveElement(PlaylistItem item)
         {
-            _list.Remove(item);
+            _presenter.List.Remove(item);
         }
     }
 }

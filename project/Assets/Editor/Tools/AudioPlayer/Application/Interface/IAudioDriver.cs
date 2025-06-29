@@ -10,7 +10,6 @@ namespace YukimaruGames.Editor.Tools
         internal bool IsPlaying { get; }
 
         internal event Action<AudioClip> OnClipChanged;
-        internal event Action<bool> OnLoopChanged;
         internal event Action<float> OnVolumeChanged;
         internal event Action<float> OnTimeUpdated;
         internal event Action OnPlayStarted;
@@ -19,7 +18,6 @@ namespace YukimaruGames.Editor.Tools
         internal event Action OnPlayResumed;
         internal event Action OnPlaybackFinished;
         
-        internal bool Loop { get; set; }
         internal float Volume { get; set; }
         internal float Time { get; set; }
 

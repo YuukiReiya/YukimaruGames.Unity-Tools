@@ -1,19 +1,22 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using YukimaruGames.Editor.Tools.AudioPlayer.Application;
 using YukimaruGames.Editor.Tools.AudioPlayer.Domain;
 
 namespace YukimaruGames.Editor.Tools.AudioPlayer.Presenter
 {
-    internal sealed class AudioPlaybackPresenter : IAudioPlaybackPresenter
+    internal sealed class AudioPlaybackPresenter : IAudioPlaybackPresenter, IDisposable
     {
         private readonly IAudioPlaybackService _service;
         private bool _shuffle;
+        private bool _disposed;
 
         private Action<bool> _onShuffleChanged;
-        private Action _onClickNextMusic;
-        private Action _onClickPreviousMusic;
+        private Action _onPlaybackFinishedProxy;
         private PlaylistItem _nextPlayRequest;
+
+        List<PlaylistItem> IAudioPlaybackPresenter.List { get; } = new();
 
         PlaylistItem IAudioPlaybackPresenter.CurrentPlayingMusic
         {
@@ -42,10 +45,10 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Presenter
             {
                 var current = _shuffle;
                 if (current == value) return;
-                
+
                 _shuffle = value;
                 _onShuffleChanged?.Invoke(value);
-            } 
+            }
         }
 
         float IAudioPlaybackPresenter.Time
@@ -63,6 +66,24 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Presenter
         internal AudioPlaybackPresenter(IAudioPlaybackService service)
         {
             _service = service;
+
+            SetUp();
+        }
+
+        ~AudioPlaybackPresenter()
+        {
+            Dispose();
+        }
+
+
+        private void SetUp()
+        {
+            _service.OnPlaybackFinished += OnPlaybackFinished;
+        }
+
+        private void TearDown()
+        {
+            _service.OnPlaybackFinished -= OnPlaybackFinished;
         }
 
         event Action<PlaylistItem> IAudioPlaybackPresenter.OnMusicChanged
@@ -85,8 +106,8 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Presenter
 
         event Action IAudioPlaybackPresenter.OnPlaybackFinished
         {
-            add => _service.OnPlaybackFinished += value;
-            remove => _service.OnPlaybackFinished -= value;
+            add => _onPlaybackFinishedProxy += value;
+            remove => _onPlaybackFinishedProxy -= value;
         }
 
         event Action<float> IAudioPlaybackPresenter.OnVolumeChanged
@@ -101,29 +122,32 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Presenter
             remove => _onShuffleChanged -= value;
         }
 
-        event Action IAudioPlaybackPresenter.OnClickNextMusic
-        {
-            add => _onClickNextMusic += value;
-            remove => _onClickNextMusic -= value;
-        }
-
-        event Action IAudioPlaybackPresenter.OnClickPreviousMusic
-        {
-            add => _onClickPreviousMusic += value;
-            remove => _onClickPreviousMusic -= value;
-        }
-
         void IAudioPlaybackPresenter.Play()
         {
-            if (_nextPlayRequest != null)
-            {
-                _service.Set(_nextPlayRequest);
-            }
-            _service.Play();  
-        } 
+            if (_nextPlayRequest != null) _service.Set(_nextPlayRequest);
+            _service.Play();
+        }
+
         void IAudioPlaybackPresenter.Stop() => _service.Stop();
         void IAudioPlaybackPresenter.Pause() => _service.Pause();
         void IAudioPlaybackPresenter.Resume() => _service.Resume();
+
+        private void OnPlaybackFinished() => _onPlaybackFinishedProxy?.Invoke();
+
+        void IDisposable.Dispose()
+        {
+            Dispose();
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose()
+        {
+            if (_disposed) return;
+
+            TearDown();
+
+            _disposed = true;
+        }
     }
 }
 #endif

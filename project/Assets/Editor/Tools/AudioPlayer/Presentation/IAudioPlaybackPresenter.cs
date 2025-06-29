@@ -1,12 +1,13 @@
 #if UNITY_EDITOR
 using System;
-using UnityEngine;
+using System.Collections.Generic;
 using YukimaruGames.Editor.Tools.AudioPlayer.Domain;
 
 namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
 {
     internal interface IAudioPlaybackPresenter
     {
+        internal List<PlaylistItem> List { get; }
         internal PlaylistItem CurrentPlayingMusic { get; set; }
         internal PlaylistItem NextPlayRequest { get; set; }
         internal bool IsPlaying { get; }
@@ -21,9 +22,6 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
         internal event Action OnPlaybackFinished;
         internal event Action<float> OnVolumeChanged;
         internal event Action<bool> OnShuffleChanged;
-
-        internal event Action OnClickNextMusic;
-        internal event Action OnClickPreviousMusic;
 
         internal void Play();
         internal void Stop();

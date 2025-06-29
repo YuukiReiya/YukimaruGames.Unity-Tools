@@ -14,11 +14,12 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
 
         private AudioPlaybackState _state;
         private PlaylistItem _currentPlaylistItem;
+        private bool _loop;
         private bool _disposed;
 
         private Action<AudioPlaybackState> _onPlaybackStateChanged;
         private Action<PlaylistItem> _onMusicChanged;
-        private Action<bool> _onLoopChangedProxy;
+        private Action<bool> _onLoopChanged;
         private Action<float> _onVolumeChangedProxy;
         private Action<float> _onTimeChangedProxy;
         private Action _onPlaybackFinishedProxy;
@@ -43,8 +44,8 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
 
         event Action<bool> IAudioPlaybackService.OnLoopChanged
         {
-            add => _onLoopChangedProxy += value;
-            remove => _onLoopChangedProxy -= value;
+            add => _onLoopChanged += value;
+            remove => _onLoopChanged -= value;
         }
 
         event Action<float> IAudioPlaybackService.OnVolumeChanged
@@ -67,8 +68,15 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
 
         bool IAudioPlaybackService.Loop
         {
-            get => _driver.Loop;
-            set => _driver.Loop = value;
+            get => _loop;
+            set
+            {
+                var current = _loop;
+                if (current == value) return;
+
+                _loop = value;
+                _onLoopChanged?.Invoke(value);
+            }
         }
 
         float IAudioPlaybackService.Volume
@@ -176,11 +184,29 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
             _onMusicChanged?.Invoke(item);
         }
 
+        private void OnVolumeChanged(float volume) => _onVolumeChangedProxy?.Invoke(volume);
+        private void OnTimeChanged(float time) => _onTimeChangedProxy?.Invoke(time);
+
         private void OnPlaybackPlaying() => _onPlaybackStateChanged?.Invoke(AudioPlaybackState.Playing);
         private void OnPlaybackStopped() => _onPlaybackStateChanged?.Invoke(AudioPlaybackState.Stopped);
         private void OnPlaybackPaused() => _onPlaybackStateChanged?.Invoke(AudioPlaybackState.Paused);
         private void OnPlaybackResumed() => _onPlaybackStateChanged?.Invoke(AudioPlaybackState.Playing);
 
+        private void OnPlaybackFinished()
+        {
+            _onPlaybackFinishedProxy?.Invoke();
+            
+            if (_loop)
+            {
+                (this as IAudioPlaybackService).Play();
+            }
+            else
+            {
+                (this as IAudioPlaybackService).Stop();
+                (this as IAudioPlaybackService).Time = 0f;
+            }
+        } 
+        
         private void OnAddPlaylist(PlaylistItem item)
         {
             if (_currentPlaylistItem != null) return;
@@ -201,6 +227,9 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
             _driver.OnPlayStopped += OnPlaybackStopped;
             _driver.OnPlayPaused += OnPlaybackPaused;
             _driver.OnPlayResumed += OnPlaybackResumed;
+            _driver.OnPlaybackFinished += OnPlaybackFinished;
+            _driver.OnTimeUpdated += OnTimeChanged;
+            _driver.OnVolumeChanged += OnVolumeChanged;
 
             _playlistItemRepository.OnAddElement += OnAddPlaylist;
             _playlistItemRepository.OnRemoveElement += OnRemovePlaylist;
@@ -212,13 +241,16 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.Application
             _driver.OnPlayStopped -= OnPlaybackStopped;
             _driver.OnPlayPaused -= OnPlaybackPaused;
             _driver.OnPlayResumed -= OnPlaybackResumed;
+            _driver.OnPlaybackFinished -= OnPlaybackFinished;
+            _driver.OnTimeUpdated -= OnTimeChanged;
+            _driver.OnVolumeChanged -= OnVolumeChanged;
             
             _playlistItemRepository.OnAddElement -= OnAddPlaylist;
             _playlistItemRepository.OnRemoveElement -= OnRemovePlaylist;
 
             _onMusicChanged = null;
             _onPlaybackStateChanged = null;
-            _onLoopChangedProxy = null;
+            _onLoopChanged = null;
             _onVolumeChangedProxy = null;
             _onTimeChangedProxy = null;
             _onPlaybackFinishedProxy = null;

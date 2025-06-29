@@ -104,14 +104,19 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
         {
             using var scope = new EditorGUILayout.HorizontalScope();
 
+            var isLoop = _presenter.Loop;
+
             if (GUILayout.Button(_prevButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                //TODO:ひとつ前の再生.
+                // ひとつ前の再生.
+                var list = _presenter.List;
+                var index = list.FindIndex(x => x.Key == _presenter.CurrentPlayingMusic.Key);
+                index = 0 < index ? --index : list.Count - 1;
+                _presenter.NextPlayRequest = list[index];
                 _presenter.Play();
             }
 
-            var isLoop = _presenter.Loop;
             _presenter.Loop = GUILayout.Toggle(isLoop, _loopButtonContentLazy.Value, _buttonStyleLazy.Value,
                 GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true));
 
@@ -121,7 +126,11 @@ namespace YukimaruGames.Editor.Tools.AudioPlayer.View
             if (GUILayout.Button(_nextButtonContentLazy.Value, _buttonStyleLazy.Value,
                     GUILayout.Height(kButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                // TODO:次の再生.
+                // 次の再生.
+                var list = _presenter.List;
+                var index = list.FindIndex(x => x.Key == _presenter.CurrentPlayingMusic.Key);
+                index = index + 1 < list.Count ? ++index : 0;
+                _presenter.NextPlayRequest = list[index];
                 _presenter.Play();
             }
         }
